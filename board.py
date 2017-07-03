@@ -11,13 +11,28 @@ def is_valid_position(position):
     return 0 <= x < 9 and 0 <= y < 9
 
 
+def get_normal_neighbors(position):
+    (x, y) = position
+    ret_val = []
+    if is_valid_position((x+1, y)):
+        ret_val.append((x+1, y))
+    if is_valid_position((x-1, y)):
+        ret_val.append((x-1, y))
+    if is_valid_position((x, y+1)):
+        ret_val.append((x, y+1))
+    if is_valid_position((x, y-1)):
+        ret_val.append((x, y-1))
+    return ret_val
+
+
 class BoardState(object):
     def __init__(self):
         self.board = np.zeros((9, 9))
         self.current_player = black_stone
-        self.black_passed = False
-        self.white_passed = False
         self.ko_point = None
+        self.history = []
+        self.black_captured = 0  # number of captures made by white
+        self.white_captured = 0  # number of captures made by black
 
     def print_board(self):  # will be used for client server communication
         for i in range(0, 9):
@@ -42,14 +57,16 @@ class BoardState(object):
         self.print_board()
         print('CURRENT PLAYER')
         print(self.current_player)
-        # print('PASSES')
-        # print(self.black_passed, self.white_passed)
+        print('HISTORY')
+        print(self.history)
         # print('KO POINT')
         # print(self.ko_point)
 
     def move(self, position):
         if self.is_valid_move(position):
             self.set_value(position, self.current_player)
+            (x, y) = position
+            self.history.append([x, y])
             self.change_player()
             return True
         return False
@@ -57,6 +74,36 @@ class BoardState(object):
     def is_valid_move(self, position):
         if not is_valid_position(position):
             return False
-        if self.get_value(position) == empty_stone:
-            return True
+        if self.is_ko_move(position):
+            return False
+        if self.get_value(position) != empty_stone:
+            return False
+        return True
+
+    def is_ko_move(self, position):
+        if self.ko_point is None:
+            return False
+        (x, y) = position
+        (ko_x, ko_y) = self.ko_point
+        return ko_x == x and ko_y == y
+
+    def is_move_suicidal(self):
+        return self.board[0, 0]
+
+    def pass_move(self):
+        self.history.append([100, 100])
+        self.ko_point = None
+        self.change_player()
+
+    def is_end_of_game(self):
+        if len(self.history) > 2:
+            if self.history[-1] == [100, 100] and self.history[-2] == [100, 100]:
+                return True
         return False
+
+    def get_winner(self):
+        black_score = (self.board > 0).sum()
+        white_score = (self.board < 0).sum()
+        black_score += self.white_captured
+        white_score += self.black_captured
+        return black_score, white_score
