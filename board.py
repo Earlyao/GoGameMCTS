@@ -59,12 +59,25 @@ class BoardState(object):
         print(self.current_player)
         print('HISTORY')
         print(self.history)
-        # print('KO POINT')
-        # print(self.ko_point)
+        print('KO POINT')
+        print(self.ko_point)
+        print('CAPTURED BY WHITE')
+        print(self.black_captured)
+        print('CAPTURED BY BLACK')
+        print(self.white_captured)
 
     def move(self, position):
         if self.is_valid_move(position):
             self.set_value(position, self.current_player)
+            removed_stones = self.clean_hood(position)
+            if removed_stones == 1:
+                self.ko_point = position
+            else:
+                self.ko_point = None
+            if self.current_player == black_stone:
+                self.white_captured += removed_stones
+            else:
+                self.black_captured += removed_stones
             (x, y) = position
             self.history.append([x, y])
             self.change_player()
@@ -90,6 +103,12 @@ class BoardState(object):
         return ko_x == x and ko_y == y
 
     def is_move_suicidal(self, position):
+        self.set_value(position, self.current_player)
+        group = self.create_group(position)
+        if not self.has_group_liberties(group):
+            self.set_value(position, empty_stone)
+            return True
+        self.set_value(position, empty_stone)
         return False
 
     def pass_move(self):
@@ -139,13 +158,11 @@ class BoardState(object):
             stones_removed += 1
         return stones_removed
 
-    def test_method(self):
-        for i in range(0, 9):
-            for j in range(0, 9):
-                if i == 2:
-                    self.board[i, j] = black_stone
-                if j == 2:
-                    self.board[i, j] = white_stone
-        self.board[0, 1] = 1
-        self.board[1, 0] = 1
-
+    def clean_hood(self, position):
+        stones_removed = 0
+        neighbors = get_normal_neighbors(position)
+        for neighbor in neighbors:
+            group = self.create_group(neighbor)
+            if not self.has_group_liberties(group):
+                stones_removed += self.remove_group(group)
+        return stones_removed
