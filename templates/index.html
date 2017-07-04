@@ -1,0 +1,104 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>Go game</title>
+  <script type="text/javascript" src="static/wgo.min.js"></script>
+</head>
+
+<body>
+  <div id="board">
+  </div>
+  <script>
+    var board = new WGo.Board(document.getElementById("board"), {
+      width: 600,
+      size: 9,
+      background: "#cc9933",
+      section: {
+        top: -0.5,
+        left: -0.5,
+        right: -0.5,
+        bottom: -0.5
+    }
+
+    });
+
+    // WGo.Board.DrawHandler which draws airplanes
+    var plane = {
+      // draw on stone layer
+      stone: {
+        // draw function is called in context of CanvasRenderingContext2D, so we can paint immediately using this
+        draw: function(args, board) {
+          var xr = board.getX(args.x), // get absolute x coordinate of intersection
+            yr = board.getY(args.y), // get absolute y coordinate of intersection
+            sr = board.stoneRadius; // get field radius in px
+
+          // if there is a black stone, draw white plane
+          if (board.obj_arr[args.x][args.y][0].c == WGo.B) this.strokeStyle = "white";
+          else this.strokeStyle = "black";
+
+          this.lineWidth = 3;
+
+          this.beginPath();
+
+          this.moveTo(xr - sr * 0.8, yr);
+          this.lineTo(xr + sr * 0.5, yr);
+          this.lineTo(xr + sr * 0.8, yr - sr * 0.25);
+          this.moveTo(xr - sr * 0.4, yr);
+          this.lineTo(xr + sr * 0.3, yr - sr * 0.6);
+          this.moveTo(xr - sr * 0.4, yr);
+          this.lineTo(xr + sr * 0.3, yr + sr * 0.6);
+
+          this.stroke();
+        }
+      },
+    }
+
+    // WGo.Board.DrawHandler which draws coordinates
+    var coordinates = {
+      // draw on grid layer
+      grid: {
+        draw: function(args, board) {
+          var ch, t, xright, xleft, ytop, ybottom;
+
+          this.fillStyle = "rgba(0,0,0,0.7)";
+          this.textBaseline = "middle";
+          this.textAlign = "center";
+          this.font = board.stoneRadius + "px " + (board.font || "");
+
+          xright = board.getX(-0.75);
+          xleft = board.getX(board.size - 0.25);
+          ytop = board.getY(-0.75);
+          ybottom = board.getY(board.size - 0.25);
+
+          for (var i = 0; i < board.size; i++) {
+            ch = i + "A".charCodeAt(0);
+            if (ch >= "I".charCodeAt(0)) ch++;
+
+            t = board.getY(i);
+            this.fillText(board.size - i, xright, t);
+            this.fillText(board.size - i, xleft, t);
+
+            t = board.getX(i);
+            this.fillText(String.fromCharCode(ch), t, ytop);
+            this.fillText(String.fromCharCode(ch), t, ybottom);
+          }
+
+          this.fillStyle = "black";
+        }
+      }
+    }
+
+    board.addCustomObject(coordinates);
+
+    board.addEventListener("click", function(x, y) {
+      board.addObject({
+        x: x,
+        y: y,
+        c: WGo.B
+      });
+    });
+  </script>
+</body>
+
+</html>
