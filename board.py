@@ -78,6 +78,8 @@ class BoardState(object):
             return False
         if self.get_value(position) != empty_stone:
             return False
+        if self.is_move_suicidal(position):
+            return False
         return True
 
     def is_ko_move(self, position):
@@ -87,8 +89,8 @@ class BoardState(object):
         (ko_x, ko_y) = self.ko_point
         return ko_x == x and ko_y == y
 
-    def is_move_suicidal(self):
-        return self.board[0, 0]
+    def is_move_suicidal(self, position):
+        return False
 
     def pass_move(self):
         self.history.append([100, 100])
@@ -107,3 +109,43 @@ class BoardState(object):
         black_score += self.white_captured
         white_score += self.black_captured
         return black_score, white_score
+
+    def create_group(self, position, group=None):
+        if group is None:
+            group = {position}
+        color = self.get_value(position)
+        neighbors = get_normal_neighbors(position)
+        for neighbor in neighbors:
+            if neighbor not in group:
+                if self.get_value(neighbor) == color:
+                    group.add(neighbor)
+                    ret_val = self.create_group(neighbor, group)
+                    for temp_position in ret_val:
+                        group.add(temp_position)
+        return group
+
+    def has_group_liberties(self, group):
+        for position in group:
+            current_neighbors = get_normal_neighbors(position)
+            for neighbor in current_neighbors:
+                if self.get_value(neighbor) == empty_stone:
+                    return True
+        return False
+
+    def remove_group(self, group):
+        stones_removed = 0
+        for position in group:
+            self.set_value(position, empty_stone)
+            stones_removed += 1
+        return stones_removed
+
+    def test_method(self):
+        for i in range(0, 9):
+            for j in range(0, 9):
+                if i == 2:
+                    self.board[i, j] = black_stone
+                if j == 2:
+                    self.board[i, j] = white_stone
+        self.board[0, 1] = 1
+        self.board[1, 0] = 1
+
