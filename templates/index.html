@@ -4,70 +4,97 @@
 <head>
   <title>Go game</title>
   <script type="text/javascript" src="static/wgo.min.js"></script>
+  <script type="text/javascript" src="static/jquery-2.2.4.min.js"></script>
 </head>
 
 <body>
   <div id="board">
   </div>
   <script>
-    var board = new WGo.Board(document.getElementById("board"), {
-      width: 600,
-      size: 9,
-      background: "#cc9933",
-      section: {
-        top: -0.5,
-        left: -0.5,
-        right: -0.5,
-        bottom: -0.5
-    }
+    $(document).ready(function() {
+      var board = new WGo.Board(document.getElementById("board"), {
+        width: 600,
+        size: 9,
+        background: "#cc9933",
+        section: {
+          top: -0.5,
+          left: -0.5,
+          right: -0.5,
+          bottom: -0.5
+        }
 
-    });
+      });
 
-    // WGo.Board.DrawHandler which draws coordinates
-    var coordinates = {
-      // draw on grid layer
-      grid: {
-        draw: function(args, board) {
-          var ch, t, xright, xleft, ytop, ybottom;
+      // WGo.Board.DrawHandler which draws coordinates
+      var coordinates = {
+        // draw on grid layer
+        grid: {
+          draw: function(args, board) {
+            var ch, t, xright, xleft, ytop, ybottom;
 
-          this.fillStyle = "rgba(0,0,0,0.7)";
-          this.textBaseline = "middle";
-          this.textAlign = "center";
-          this.font = board.stoneRadius + "px " + (board.font || "");
+            this.fillStyle = "rgba(0,0,0,0.7)";
+            this.textBaseline = "middle";
+            this.textAlign = "center";
+            this.font = board.stoneRadius + "px " + (board.font || "");
 
-          xright = board.getX(-0.75);
-          xleft = board.getX(board.size - 0.25);
-          ytop = board.getY(-0.75);
-          ybottom = board.getY(board.size - 0.25);
+            xright = board.getX(-0.75);
+            xleft = board.getX(board.size - 0.25);
+            ytop = board.getY(-0.75);
+            ybottom = board.getY(board.size - 0.25);
 
-          for (var i = 0; i < board.size; i++) {
-            ch = i + "A".charCodeAt(0);
-            if (ch >= "I".charCodeAt(0)) ch++;
+            for (var i = 0; i < board.size; i++) {
+              ch = i + "A".charCodeAt(0);
+              if (ch >= "I".charCodeAt(0)) ch++;
 
-            t = board.getY(i);
-            this.fillText(board.size - i, xright, t);
-            this.fillText(board.size - i, xleft, t);
+              t = board.getY(i);
+              this.fillText(board.size - i, xright, t);
+              this.fillText(board.size - i, xleft, t);
 
-            t = board.getX(i);
-            this.fillText(String.fromCharCode(ch), t, ytop);
-            this.fillText(String.fromCharCode(ch), t, ybottom);
+              t = board.getX(i);
+              this.fillText(String.fromCharCode(ch), t, ytop);
+              this.fillText(String.fromCharCode(ch), t, ybottom);
+            }
+
+            this.fillStyle = "black";
           }
-
-          this.fillStyle = "black";
         }
       }
-    }
 
-    board.addCustomObject(coordinates);
+      board.addCustomObject(coordinates);
 
-    board.addEventListener("click", function(x, y) {
-      board.addObject({
-        x: x,
-        y: y,
-        c: WGo.B
+      board.addEventListener("click", function(x, y) {
+        $.post('/move', {
+          'x': x,
+          'y': y
+        }, function(data, status) {
+          if (data.message === 'OK') {
+            for (let i = 0; i < 9; i++) {
+              for (let j = 0; j < 9; j++) {
+                if (data.board[i][j] === 1) {
+                  board.addObject({
+                    x: j,
+                    y: i,
+                    c: WGo.B
+                  });
+                } else if (data.board[i][j] === -1) {
+                  board.addObject({
+                    x: j,
+                    y: i,
+                    c: WGo.W
+                  });
+                } else {
+                  board.removeObjectsAt(j, i);
+                }
+              }
+            }
+          }else{
+            alert(data.message);
+          }
+        });
+
       });
-    });
 
+    });
   </script>
 </body>
 

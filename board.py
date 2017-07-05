@@ -34,11 +34,13 @@ class BoardState(object):
         self.black_captured = 0  # number of captures made by white
         self.white_captured = 0  # number of captures made by black
 
-    def print_board(self):  # will be used for client server communication
+    def board_to_string(self):  # will be used for client server communication
+        ret_str = ''
         for i in range(0, 9):
             for j in range(0, 9):
-                print(self.board[i][j], end=" ")
-            print()
+                ret_str += str(self.board[i][j]) + " "
+            ret_str += '\n'
+        return ret_str
 
     def change_player(self):
         self.current_player = - self.current_player
@@ -54,7 +56,7 @@ class BoardState(object):
     """Debugging method"""
     def print_state(self):
         print('BOARD:')
-        self.print_board()
+        print(self.board_to_string())
         print('CURRENT PLAYER')
         print(self.current_player)
         print('HISTORY')
@@ -67,7 +69,9 @@ class BoardState(object):
         print(self.white_captured)
 
     def move(self, position):
-        if self.is_valid_move(position):
+        (status, message) = self.is_valid_move(position)
+        print(status, message)
+        if status:
             self.set_value(position, self.current_player)
             removed_stones = self.clean_hood(position)
             if removed_stones == 1:
@@ -81,19 +85,20 @@ class BoardState(object):
             (x, y) = position
             self.history.append([x, y])
             self.change_player()
-            return True
-        return False
+            return 'OK'
+        return message
 
     def is_valid_move(self, position):
+        print('OVDE')
         if not is_valid_position(position):
-            return False
+            return False, 'Invalid position'
         if self.is_ko_move(position):
-            return False
+            return False, 'Ko Move'
         if self.get_value(position) != empty_stone:
-            return False
+            return False, 'Not empty stone'
         if self.is_move_suicidal(position):
-            return False
-        return True
+            return False, 'Suicidal move'
+        return True, 'OK'
 
     def is_ko_move(self, position):
         if self.ko_point is None:
@@ -166,3 +171,6 @@ class BoardState(object):
             if not self.has_group_liberties(group):
                 stones_removed += self.remove_group(group)
         return stones_removed
+
+    def board_to_list(self):
+        return self.board.tolist()
