@@ -10,10 +10,12 @@
 <body>
   <div id="board">
   </div>
+  <br>
+  <button>Pass</button>
   <script>
     $(document).ready(function() {
       var board = new WGo.Board(document.getElementById("board"), {
-        width: 600,
+        width: 500,
         size: 9,
         background: "#cc9933",
         section: {
@@ -87,13 +89,43 @@
                 }
               }
             }
-          }else{
+          } else {
             alert(data.message);
           }
         });
 
       });
 
+      $("button").click(function(event){
+        $.post('/move', {
+          'x': 100,
+          'y': 100
+        }, function(data, status) {
+          if (data.message === 'OK') {
+            for (let i = 0; i < 9; i++) {
+              for (let j = 0; j < 9; j++) {
+                if (data.board[i][j] === 1) {
+                  board.addObject({
+                    x: j,
+                    y: i,
+                    c: WGo.B
+                  });
+                } else if (data.board[i][j] === -1) {
+                  board.addObject({
+                    x: j,
+                    y: i,
+                    c: WGo.W
+                  });
+                } else {
+                  board.removeObjectsAt(j, i);
+                }
+              }
+            }
+          } else {
+            alert(data.message);
+          }
+        });
+      });
     });
   </script>
 </body>

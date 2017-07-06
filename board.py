@@ -70,7 +70,6 @@ class BoardState(object):
 
     def move(self, position):
         (status, message) = self.is_valid_move(position)
-        print(status, message)
         if status:
             self.set_value(position, self.current_player)
             removed_stones = self.clean_hood(position)
@@ -89,7 +88,6 @@ class BoardState(object):
         return message
 
     def is_valid_move(self, position):
-        print('OVDE')
         if not is_valid_position(position):
             return False, 'Invalid position'
         if self.is_ko_move(position):
@@ -132,7 +130,8 @@ class BoardState(object):
         white_score = (self.board < 0).sum()
         black_score += self.white_captured
         white_score += self.black_captured
-        return black_score, white_score
+        white_score += 6.5
+        return 1 if black_score > white_score else -1
 
     def create_group(self, position, group=None):
         if group is None:
@@ -174,3 +173,28 @@ class BoardState(object):
 
     def board_to_list(self):
         return self.board.tolist()
+
+    def clone_board_state(self):
+        board2 = BoardState()
+        board2.board = np.empty_like(self.board)
+        board2.board[:] = self.board
+        board2.current_player = self.current_player
+        board2.ko_point = self.ko_point
+        board2.history = self.history[:]
+        board2.black_captured = self.black_captured
+        board2.white_captured = self.white_captured
+        return board2
+
+    def get_all_possible_moves(self):
+        moves = []
+        for i in range(0, 9):
+            for j in range(0, 9):
+                status, _ = self.is_valid_move((i, j))
+                if status:
+                    moves.append((i, j))
+        return moves
+
+    @staticmethod
+    def clear_board():
+        board2 = BoardState()
+        return board2
